@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Lab Results Visualization</title>
+  <script src="https://d3js.org/d3.v7.min.js"></script>
+  <style>
+    svg {
+      font-family: sans-serif;
+    }
+    .line {
+      fill: none;
+      stroke: steelblue;
+      stroke-width: 2px;
+    }
+  </style>
+</head>
+<body>
+    <h1>Lab Results Over Time</h1>
+    <label for="lab-select">Select Lab Test:</label>
+    <select id="lab-select"></select>
+    <div id="chart"></div>
+  
+    <h2>Average Lab Results Over Time (Heatmap)</h2>
+    <div id="lab-heatmap"></div>
+  
+    <script src="script.js"></script>
+  </body>
+</html>
