@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Average Albumin by Age Separated by Gender</title>
+</head>
+<body>
+    <h1>Average Albumin (alb) by Age Separated by Gender with Regression Lines</h1>
+    <svg id="alb-trend" width="800" height="400"></svg>
+
+    <!-- Include D3.js -->
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+
+    <script>
+        // Load the merged dataset
+        d3.json("merged.json").then(function(data) {
+            // Filter data for 'alb' test results
+            const albData = data.filter(d => d.name === "alb" && d.result != null && d.sex);
+
+            // Group data by age and gender, and calculate average albumin result for each group
+            const ageGroupData = d3.rollup(albData, v => d3.mean(v, d => d.result), d => d.age, d => d.sex);
+
+            // Convert to an array of objects for plotting
+            const ageAvgData = [];
+            ageGroupData.forEach((sexMap, age) => {
+                sexMap.forEach((avgAlb, sex) => {
+                    ageAvgData.push({ age, sex, avgAlb });
+                });
+            });
+
+            // Sort by age
+            ageAvgData.sort((a, b) => a.age - b.age);
+
+            // Set up the SVG and margins for the plot
+            const svg = d3.select("#alb-trend");
+            const margin = { top: 40, right: 30, bottom: 50, left: 60 };
+            const width = +svg.attr("width") - margin.left - margin.right;
+            const height = +svg.attr("height") - margin.top - margin.bottom;
+            const g = svg.append("g").attr("transform", `translate(${margin.left},${margin.top})`);
+
+            // Set up scales
+            const x = d3.scaleLinear()
+                .domain(d3.extent(ageAvgData, d => d.age))
+                .range([0, width]);
+
+            const y = d3.scaleLinear()
+                .domain([d3.min(ageAvgData, d => d.avgAlb), d3.max(ageAvgData, d => d.avgAlb)])
+                .range([height, 0]);
+
+            // Set up axes
+            g.append("g")
+                .attr("transform", `translate(0,${height})`)
+                .call(d3.axisBottom(x));
+
+            g.append("g")
+                .call(d3.axisLeft(y));
+
+            // Create the scatter plot by appending circles for each data point
+            g.selectAll("circle")
+                .data(ageAvgData)
+                .enter().append("circle")
+                .attr("cx", d => x(d.age))
+                .attr("cy", d => y(d.avgAlb))
+                .attr("r", 5)
+                .style("fill", d => d.sex === "M" ? "#1f77b4" : "#ff7f0e")  // Blue for Male, Orange for Female
+                .style("stroke", "black");
+
+            // Function to calculate the linear regression line coefficients (slope, intercept)
+            function linearRegression(data) {
+                const n = data.length;
+                const xSum = d3.sum(data, d => d.age);
+                const ySum = d3.sum(data, d => d.avgAlb);
+                const xySum = d3.sum(data, d => d.age * d.avgAlb);
+                const x2Sum = d3.sum(data, d => d.age * d.age);
+
+                const slope = (n * xySum - xSum * ySum) / (n * x2Sum - xSum * xSum);
+                const intercept = (ySum - slope * xSum) / n;
+
+                return { slope, intercept };
+            }
+
+            // Separate the data by gender
+            const maleData = ageAvgData.filter(d => d.sex === "M");
+            const femaleData = ageAvgData.filter(d => d.sex === "F");
+
+            // Calculate the regression line for males and females
+            const maleRegression = linearRegression(maleData);
+            const femaleRegression = linearRegression(femaleData);
+
+            // Create the line of best fit for males
+            const maleLine = d3.line()
+                .x(d => x(d.age))
+                .y(d => y(maleRegression.slope * d.age + maleRegression.intercept));
+
+            // Create the line of best fit for females
+            const femaleLine = d3.line()
+                .x(d => x(d.age))
+                .y(d => y(femaleRegression.slope * d.age + femaleRegression.intercept));
+
+            // Append the lines of best fit to the SVG
+            g.append("path")
+                .data([maleData])
+                .join("path")
+                .attr("class", "line")
+                .attr("d", maleLine)
+                .attr("fill", "none")
+                .attr("stroke", "#1f77b4")
+                .attr("stroke-width", 2)
+                .attr("stroke-dasharray", "4");
+
+            g.append("path")
+                .data([femaleData])
+                .join("path")
+                .attr("class", "line")
+                .attr("d", femaleLine)
+                .attr("fill", "none")
+                .attr("stroke", "#ff7f0e")
+                .attr("stroke-width", 2)
+                .attr("stroke-dasharray", "4");
+
+            // Title and labels
+            svg.append("text")
+                .attr("x", width / 2)
+                .attr("y", margin.top - 10)
+                .attr("text-anchor", "middle")
+                .style("font-size", "16px")
+                .text("Average Albumin (alb) by Age Separated by Gender with Regression Lines");
+
+            svg.append("text")
+                .attr("x", width / 2)
+                .attr("y", height + margin.bottom - 10)
+                .attr("text-anchor", "middle")
+                .style("font-size", "12px")
+                .text("Age");
+
+            svg.append("text")
+                .attr("transform", "rotate(-90)")
+                .attr("x", -height / 2)
+                .attr("y", margin.left - 40)
+                .attr("text-anchor", "middle")
+                .style("font-size", "12px")
+                .text("Average Albumin Level (g/dL)");
+
+            // Add legend
+            const legend = svg.append("g")
+                .attr("transform", `translate(${width - 120}, 20)`);
+
+            legend.append("circle")
+                .attr("cx", 0)
+                .attr("cy", 0)
+                .attr("r", 5)
+                .style("fill", "#1f77b4");
+
+            legend.append("text")
+                .attr("x", 10)
+                .attr("y", 0)
+                .attr("dy", ".35em")
+                .style("font-size", "12px")
+                .text("Male");
+
+            legend.append("circle")
+                .attr("cx", 0)
+                .attr("cy", 20)
+                .attr("r", 5)
+                .style("fill", "#ff7f0e");
+
+            legend.append("text")
+                .attr("x", 10)
+                .attr("y", 20)
+                .attr("dy", ".35em")
+                .style("font-size", "12px")
+                .text("Female");
+        });
+    </script>
+</body>
+</html>
