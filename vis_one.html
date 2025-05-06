@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Stacked Bar by Gender</title>
+  <script src="https://d3js.org/d3.v7.min.js"></script>
+  <style>
+    body { font-family: sans-serif; }
+    .axis path, .axis line {
+      stroke: #ccc;
+    }
+    #tooltip {
+      position: absolute;
+      background: #fff;
+      padding: 6px 10px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      pointer-events: none;
+      font-size: 12px;
+      opacity: 0;
+      transition: opacity 0.2s;
+    }
+  </style>
+</head>
+<body>
+<div id="tooltip"></div>
+<svg width="700" height="400"></svg>
+
+<script>
+  d3.json("stacked_data.json").then(data => {
+    const svg = d3.select("svg"),
+          margin = {top: 30, right: 20, bottom: 40, left: 50},
+          width = +svg.attr("width") - margin.left - margin.right,
+          height = +svg.attr("height") - margin.top - margin.bottom,
+          g = svg.append("g").attr("transform", `translate(${margin.left},${margin.top})`);
+
+    const keys = Object.keys(data[0]).filter(k => k !== "sex");
+
+    const x = d3.scaleBand()
+                .domain(data.map(d => d.sex))
+                .range([0, width])
+                .padding(0.2);
+
+    const y = d3.scaleLinear()
+                .domain([0, d3.max(data, d => d3.sum(keys, k => d[k]))])
+                .nice()
+                .range([height, 0]);
+
+    const color = d3.scaleOrdinal()
+                    .domain(keys)
+                    .range(d3.schemeSet2);
+
+    const stack = d3.stack().keys(keys);
+    const stackedData = stack(data);
+
+    // Draw bars
+    g.append("g")
+      .selectAll("g")
+      .data(stackedData)
+      .join("g")
+        .attr("fill", d => color(d.key))
+      .selectAll("rect")
+      .data(d => d.map(v => ({ ...v, key: d.key })))
+      .join("rect")
+        .attr("x", d => x(d.data.sex))
+        .attr("y", d => y(d[1]))
+        .attr("height", d => y(d[0]) - y(d[1]))
+        .attr("width", x.bandwidth())
+        .on("mouseover", (event, d) => {
+          d3.select("#tooltip")
+            .style("opacity", 1)
+            .html(`<strong>Surgery Type:</strong> ${d.key}<br>
+                   <strong>Count:</strong> ${(d[1] - d[0]).toFixed(0)}`);
+        })
+        .on("mousemove", (event) => {
+          d3.select("#tooltip")
+            .style("left", (event.pageX + 10) + "px")
+            .style("top", (event.pageY - 28) + "px");
+        })
+        .on("mouseleave", () => {
+          d3.select("#tooltip").style("opacity", 0);
+        });
+
+    // y-axis
+    g.append("g")
+      .attr("class", "axis")
+      .call(d3.axisLeft(y));
+
+    // x-axis
+    g.append("g")
+      .attr("class", "axis")
+      .attr("transform", `translate(0,${height})`)
+      .call(d3.axisBottom(x));
+  });
+</script>
+</body>
+</html>
