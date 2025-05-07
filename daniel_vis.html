@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Visualizations</title>
+  <script src="https://d3js.org/d3.v7.min.js"></script>
+  <style>
+    .axis-label {
+      font-size: 12px;
+    }
+    .axis path,
+    .axis line {
+      fill: none;
+      shape-rendering: crispEdges;
+    }
+    .tooltip {
+      position: absolute;
+      text-align: center;
+      padding: 5px;
+      background-color: white;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+      pointer-events: none;
+      visibility: hidden;
+    }
+  </style>
+</head>
+<body>
+  <div id="visualization1">
+    <h2>Line Chart Visualization</h2>
+    <select id="lab-select"></select>
+    <div id="chart"></div>
+  </div>
+
+  <div id="visualization2">
+    <h2>Heatmap Visualization</h2>
+    <div id="lab-heatmap"></div>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>
