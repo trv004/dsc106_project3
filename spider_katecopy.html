@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Radar Chart: Health Category Summary</title>
+  <script src="https://d3js.org/d3.v7.min.js"></script>
+  <style>
+    body { font-family: sans-serif; }
+    svg { display: block; margin: auto; }
+    .axisLabel { font-size: 12px; fill: #444; }
+    .radarArea { fill-opacity: 0.3; transition: all 0.2s; }
+
+    select#caseSelect {
+      border: 2px solid crimson;
+      background-color: #fbe8ea;
+      color: crimson;
+      font-weight: bold;
+    }
+
+    select#sexFilter,
+    select#ageFilter {
+      border: 2px solid steelblue;
+      background-color: #e6f0fb;
+      color: steelblue;
+      font-weight: bold;
+    }
+
+    .legend rect, .legend text {
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+
+  <h2 style="text-align:center">Radar Chart: Health Category Summary</h2>
+
+  <!-- Replace your existing filters and script section with this -->
+
+<div style="text-align:center; margin-bottom: 10px;">
+  Gender:
+  <select id="sexFilter">
+    <option value="all">All</option>
+    <option value="M">Male</option>
+    <option value="F">Female</option>
+  </select>
+  Age Group:
+  <select id="ageFilter">
+    <option value="all">All</option>
+    <option value="20-39">20–39</option>
+    <option value="40-59">40–59</option>
+    <option value="60-79">60–79</option>
+    <option value="80+">80+</option>
+  </select>
+  Height (cm): <input type="number" id="heightInput" style="width:60px;">
+  Weight (kg): <input type="number" id="weightInput" style="width:60px;">
+  <button onclick="update()">Update Chart</button>
+</div>
+
+<script>
+  const svg = d3.select("svg"),
+        width = +svg.attr("width"),
+        height = +svg.attr("height"),
+        radius = Math.min(width, height) / 2 - 60,
+        g = svg.append("g").attr("transform", `translate(${width / 2},${height / 2})`);
+
+  const colors = ["steelblue"];
+
+  function getAgeGroup(age) {
+    if (age < 40) return "20-39";
+    if (age < 60) return "40-59";
+    if (age < 80) return "60-79";
+    return "80+";
+  }
+
+  d3.json("data.json").then(data => {
+    const groupedByCase = d3.group(data, d => d.caseid);
+
+    function update() {
+      const selectedSex = d3.select("#sexFilter").node().value;
+      const selectedAgeGroup = d3.select("#ageFilter").node().value;
+      const height = +d3.select("#heightInput").node().value;
+      const weight = +d3.select("#weightInput").node().value;
+      const bmi = height && weight ? +(weight / ((height / 100) ** 2)).toFixed(1) : null;
+    
+      let filtered = data;
+    
+      const isDefaultFilters =
+        selectedSex === "all" &&
+        selectedAgeGroup === "all" &&
+        (!height || !weight);
+    
+      if (!isDefaultFilters) {
+        if (selectedSex !== "all") {
+          filtered = filtered.filter(d => d.sex === selectedSex);
+        }
+        if (selectedAgeGroup !== "all") {
+          filtered = filtered.filter(d => getAgeGroup(d.age) === selectedAgeGroup);
+        }
+        if (bmi !== null) {
+          filtered = filtered.filter(d => Math.abs(d.bmi - bmi) <= 1);
+        }
+      }
+    
+      if (filtered.length === 0) {
+        g.selectAll("*").remove();
+        svg.select(".legend").remove();
+        return;
+      }
+    
+      const focusTests = ["alb", "alt", "wbc", "sao2", "crea"];
+      const avgMap = {};
+      filtered.forEach(d => {
+        if (focusTests.includes(d.name)) {
+          if (!avgMap[d.name]) avgMap[d.name] = [];
+          avgMap[d.name].push(+d.result);
+        }
+      });
+    
+      const tests = focusTests.filter(t => avgMap[t] && avgMap[t].length > 0);
+      const angleSlice = (2 * Math.PI) / tests.length;
+    
+      const avg = {};
+      tests.forEach(t => { avg[t] = d3.mean(avgMap[t]); });
+    
+      const radarData = [
+        { group: "Filtered Average", ...avg }
+      ];
+    
+      const maxVal = d3.max(tests.map(t => avg[t]));
+    
+      g.selectAll("*").remove();
+    
+      // Axes
+      tests.forEach((t, i) => {
+        const angle = angleSlice * i - Math.PI / 2;
+        const x = Math.cos(angle) * radius;
+        const y = Math.sin(angle) * radius;
+    
+        g.append("line").attr("x1", 0).attr("y1", 0).attr("x2", x).attr("y2", y).attr("stroke", "#ccc");
+        g.append("text")
+          .attr("x", x * 1.1)
+          .attr("y", y * 1.1)
+          .attr("text-anchor", "middle")
+          .attr("class", "axisLabel")
+          .text(t);
+      });
+    
+      function getPath(obj) {
+        return d3.lineRadial()
+          .radius((d, i) => radius * ((obj[d] || 0) / maxVal))
+          .angle((d, i) => i * angleSlice)
+          (tests);
+      }
+    
+      g.selectAll(".radar")
+        .data(radarData)
+        .enter()
+        .append("path")
+        .attr("class", "radarArea average-shape")
+        .attr("d", d => getPath(d))
+        .attr("stroke", colors[0])
+        .attr("fill", colors[0])
+        .attr("fill-opacity", 0.3)
+        .attr("stroke-width", 2);
+    
+      svg.select(".legend").remove();
+    
+      const legend = svg.append("g")
+        .attr("class", "legend")
+        .attr("transform", `translate(20,20)`);
+    
+      legend.append("rect")
+        .attr("x", 0)
+        .attr("y", 0)
+        .attr("width", 15)
+        .attr("height", 15)
+        .attr("fill", colors[0]);
+    
+      legend.append("text")
+        .attr("x", 20)
+        .attr("y", 12)
+        .text(isDefaultFilters ? "Overall Average" : "Filtered Average");
+    }
+    
+
+    // Initial draw
+    update();
+  });
+</script>

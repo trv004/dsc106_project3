@@ -1,29 +1,36 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-  <meta charset="UTF-8">
-  <title>Lab Results Visualization</title>
+  <meta charset="utf-8">
+  <title>Spider Chart: Blood Profile Comparison</title>
   <script src="https://d3js.org/d3.v7.min.js"></script>
-  <style>
-    svg {
-      font-family: sans-serif;
-    }
-    .line {
-      fill: none;
-      stroke: steelblue;
-      stroke-width: 2px;
-    }
-  </style>
+  <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <h1>Lab Results Over Time</h1>
-    <label for="lab-select">Select Lab Test:</label>
-    <select id="lab-select"></select>
-    <div id="chart"></div>
-  
-    <h2>Average Lab Results Over Time (Heatmap)</h2>
-    <div id="lab-heatmap"></div>
-  
-    <script src="script.js"></script>
-  </body>
+
+  <h2 style="text-align:center">Spider Chart: Blood Profile Comparison</h2>
+
+  <div style="text-align:center; margin-bottom: 10px;">
+    Case ID:
+    <select id="caseSelect"></select>
+    Gender:
+    <select id="sexFilter">
+      <option value="all">All</option>
+      <option value="M">Male</option>
+      <option value="F">Female</option>
+    </select>
+    Age Group:
+    <select id="ageFilter">
+      <option value="all">All</option>
+      <option value="20-39">20–39</option>
+      <option value="40-59">40–59</option>
+      <option value="60-79">60–79</option>
+      <option value="80+">80+</option>
+    </select>
+  </div>
+
+  <svg width="600" height="600"></svg>
+
+  <script src="script.js"></script>
+</body>
 </html>

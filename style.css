@@ -1,0 +1,39 @@
+body {
+    font-family: sans-serif;
+  }
+  
+  svg {
+    display: block;
+    margin: auto;
+  }
+  
+  .axisLabel {
+    font-size: 12px;
+    fill: #444;
+  }
+  
+  .radarArea {
+    fill-opacity: 0.3;
+    transition: all 0.2s;
+  }
+  
+  select#caseSelect {
+    border: 2px solid crimson;
+    background-color: #fbe8ea;
+    color: crimson;
+    font-weight: bold;
+  }
+  
+  select#sexFilter,
+  select#ageFilter {
+    border: 2px solid steelblue;
+    background-color: #e6f0fb;
+    color: steelblue;
+    font-weight: bold;
+  }
+  
+  .legend rect,
+  .legend text {
+    cursor: pointer;
+  }
+  
