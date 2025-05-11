@@ -145,3 +145,25 @@ d3.json("data.json").then(data => {
       .text(d => d);
   }
 });
+
+d3.json("data.json").then(data => {
+    // Group by caseid and test name
+    const grouped = d3.rollups(
+        data,
+        v => d3.mean(v, d => d.result),
+        d => d.caseid,
+        d => d.name
+    );
+
+    // Flatten into array of { caseid, name, avg }
+    const averagedData = [];
+    grouped.forEach(([caseid, tests]) => {
+        tests.forEach(([name, avg]) => {
+          averagedData.push({ caseid, name, avg });
+      });
+    });
+
+    // Just logging for now; you can use this data in a visualization
+    console.log(averagedData);
+
+});
