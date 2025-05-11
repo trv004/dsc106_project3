@@ -13,66 +13,79 @@ function getAgeGroup(age) {
   return "80+";
 }
 
+// Function to group by height ranges
+function getHeightGroup(height) {
+  if (height < 160) return "150-160";
+  if (height < 170) return "160-170";
+  if (height < 180) return "170-180";
+  return "180+";
+}
+
+// Function to group by weight ranges
+function getWeightGroup(weight) {
+  if (weight < 60) return "50-60";
+  if (weight < 70) return "60-70";
+  if (weight < 80) return "70-80";
+  return "80+";
+}
+
 d3.json("data.json").then(data => {
-  d3.selectAll("#sexFilter, #ageFilter").on("change", update);
+  d3.selectAll("#sexFilter, #ageFilter, #heightRange, #weightRange").on("change", update);
 
   update();
 
   function update() {
     const selectedSex = d3.select("#sexFilter").node().value;
     const selectedAgeGroup = d3.select("#ageFilter").node().value;
+    const selectedHeightRange = d3.select("#heightRange").node().value;
+    const selectedWeightRange = d3.select("#weightRange").node().value;
   
     // Filter data
     let filtered = data;
+
+    // Filter by sex
     if (selectedSex !== "all") {
       filtered = filtered.filter(d => d.sex === selectedSex);
     }
+
+    // Filter by age group
     if (selectedAgeGroup !== "all") {
       filtered = filtered.filter(d => getAgeGroup(d.age) === selectedAgeGroup);
     }
-  
-    // Define a preferred/fixed test axis order
-    const preferredOrder = [
-      "alb", "alt", "ammo", "aptt", "ast", "be", "bun", "ccr", "cl", "cr", "crp",
-      "esr", "fib", "gfr", "gluc", "hb", "hco3", "hct", "ica", "k", "lac", "na",
-      "pco2", "ph", "plt", "po2", "pt%", "ptinr", "ptsec", "sao2", "tbil", "tprot", "wbc"
-    ];
 
-    // Compute averages and filter valid tests
-    const avg = {};
-    const tests = preferredOrder.filter(name => {
-      const vals = filtered.map(d => +d[name]).filter(v => Number.isFinite(v));
-      if (vals.length >= filtered.length * 0.5) {
-        avg[name] = d3.mean(vals);
-        return true;
-      }
-      return false;
-    });
-  
-    // Early exit if there's no valid data
-    g.selectAll("*").remove();
-    svg.select(".legend").remove();
-    if (filtered.length === 0 || tests.length === 0) {
-      g.append("text")
-        .attr("text-anchor", "middle")
-        .attr("dy", ".35em")
-        .text("No data to display for this filter.");
-      return;
+    // Filter by height range
+    if (selectedHeightRange !== "all") {
+      filtered = filtered.filter(d => getHeightGroup(d.height) === selectedHeightRange);
+    }
+
+    // Filter by weight range
+    if (selectedWeightRange !== "all") {
+      filtered = filtered.filter(d => getWeightGroup(d.weight) === selectedWeightRange);
     }
   
-    const angleSlice = (2 * Math.PI) / tests.length;
-    const maxVal = 1;
-  
-    // Prepare data in radar-friendly format
-    const radarData = [
-      {
-        name: "Average",
-        values: tests.map(test => ({
-          axis: test,
-          value: avg[test] ?? 0
-        }))
+    const excludeKeys = new Set(["caseid", "sex", "age", "height", "weight"]);
+    const testNames = Object.keys(data[0]).filter(k => !excludeKeys.has(k));
+
+    // Compute averages
+    const avg = {};
+    const tests = [];
+    testNames.forEach(name => {
+      const vals = filtered.map(d => +d[name]).filter(v => Number.isFinite(v));
+      if (vals.length >= filtered.length * 0.5) {  // Include only if ≥50% non-null
+        avg[name] = d3.mean(vals);
+        tests.push(name);  // Only keep tests with enough valid data
       }
+    });
+
+    const angleSlice = (2 * Math.PI) / tests.length;
+  
+    const radarData = [
+      { group: "Average", ...avg },
     ];
+  
+    const maxVal = 1; // or choose your max reference for better scale
+  
+    g.selectAll("*").remove();
   
     // Axes
     tests.forEach((t, i) => {
@@ -80,13 +93,7 @@ d3.json("data.json").then(data => {
       const x = Math.cos(angle) * radius;
       const y = Math.sin(angle) * radius;
   
-      g.append("line")
-        .attr("x1", 0)
-        .attr("y1", 0)
-        .attr("x2", x)
-        .attr("y2", y)
-        .attr("stroke", "#ccc");
-  
+      g.append("line").attr("x1", 0).attr("y1", 0).attr("x2", x).attr("y2", y).attr("stroke", "#ccc");
       g.append("text")
         .attr("x", x * 1.1)
         .attr("y", y * 1.1)
@@ -95,47 +102,46 @@ d3.json("data.json").then(data => {
         .text(t);
     });
   
-    // Path generator
-    function getPath(datum) {
+    function getPath(obj) {
       return d3.lineRadial()
-        .radius(d => radius * (d.value / maxVal))
-        .angle((d, i) => i * angleSlice)(datum.values);
+        .radius((d, i) => radius * ((obj[d] || 0) / maxVal))
+        .angle((d, i) => i * angleSlice)
+        (tests);
     }
   
-    // Draw radar shape
     g.selectAll(".radar")
       .data(radarData)
       .enter()
       .append("path")
       .attr("class", "radarArea average-shape")
-      .attr("d", getPath)
+      .attr("d", d => getPath(d))
       .attr("stroke", colors[0])
       .attr("fill", colors[0])
       .attr("fill-opacity", 0.3);
   
     // Legend
+    svg.select(".legend").remove();
     const legend = svg.append("g")
       .attr("class", "legend")
       .attr("transform", `translate(20,20)`);
   
+    const legendLabels = ["Average"];
     legend.selectAll("rect")
-      .data(["Average"])
+      .data(legendLabels)
       .enter()
       .append("rect")
       .attr("x", 0)
       .attr("y", (d, i) => i * 20)
       .attr("width", 15)
       .attr("height", 15)
-      .attr("fill", colors[0]);
+      .attr("fill", (d, i) => colors[i]);
   
     legend.selectAll("text")
-      .data(["Average"])
+      .data(legendLabels)
       .enter()
       .append("text")
       .attr("x", 20)
       .attr("y", (d, i) => i * 20 + 12)
       .text(d => d);
   }
-  
-  
 });
