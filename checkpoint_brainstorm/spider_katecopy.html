@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Radar Chart: Health Category Summary</title>
+  <script src="https://d3js.org/d3.v7.min.js"></script>
+  <style>
+    body { font-family: sans-serif; }
+    svg { display: block; margin: auto; }
+    .axisLabel { font-size: 12px; fill: #444; }
+    .radarArea { fill-opacity: 0.3; transition: all 0.2s; }
+
+    select#caseSelect {
+      border: 2px solid crimson;
+      background-color: #fbe8ea;
+      color: crimson;
+      font-weight: bold;
+    }
+
+    select#sexFilter,
+    select#ageFilter {
+      border: 2px solid steelblue;
+      background-color: #e6f0fb;
+      color: steelblue;
+      font-weight: bold;
+    }
+
+    .legend rect, .legend text {
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+
+  <h2 style="text-align:center">Radar Chart: Health Category Summary</h2>
+
+  <div style="text-align:center; margin-bottom: 10px;">
+    Case ID:
+    <select id="caseSelect"></select>
+    Gender:
+    <select id="sexFilter">
+      <option value="all">All</option>
+      <option value="M">Male</option>
+      <option value="F">Female</option>
+    </select>
+    Age Group:
+    <select id="ageFilter">
+      <option value="all">All</option>
+      <option value="20-39">20–39</option>
+      <option value="40-59">40–59</option>
+      <option value="60-79">60–79</option>
+      <option value="80+">80+</option>
+    </select>
+  </div>
+
+  <svg width="600" height="600"></svg>
+
+  <script>
+    const categories = {
+      "Blood Cell Health": ["wbc", "rbc", "hgb", "hct", "mcv", "mch", "mchc", "rdw", "plt"],
+      "Liver Function": ["alt", "ast", "alp", "bilirubin"],
+      "Kidney Function": ["bun", "creatinine", "bun/creatinine"],
+      "Electrolytes": ["sodium", "potassium", "chloride", "co2"],
+      "Coagulation/Gases": ["inr", "pt", "pco2", "po2"]
+    };
+
+    function groupScores(data) {
+      const scores = {};
+      for (const [cat, tests] of Object.entries(categories)) {
+        const values = data.filter(d => tests.includes(d.name)).map(d => +d.result);
+        scores[cat] = values.length ? d3.mean(values) : 0;
+      }
+      return scores;
+    }
+
+    const svg = d3.select("svg"),
+          width = +svg.attr("width"),
+          height = +svg.attr("height"),
+          radius = Math.min(width, height) / 2 - 60,
+          g = svg.append("g").attr("transform", `translate(${width / 2},${height / 2})`);
+
+    const colors = ["steelblue", "crimson"];
+
+    function getAgeGroup(age) {
+      if (age < 40) return "20-39";
+      if (age < 60) return "40-59";
+      if (age < 80) return "60-79";
+      return "80+";
+    }
+
+    d3.json("data.json").then(data => {
+      const grouped = d3.group(data, d => d.caseid);
+      const caseIDs = Array.from(grouped.keys()).sort((a, b) => a - b);
+
+      d3.select("#caseSelect")
+        .selectAll("option")
+        .data(caseIDs)
+        .enter()
+        .append("option")
+        .attr("value", d => d)
+        .text(d => d);
+
+      d3.selectAll("#caseSelect, #sexFilter, #ageFilter").on("change", update);
+      update();
+
+      function update() {
+        const selectedCase = +d3.select("#caseSelect").node().value;
+        const selectedSex = d3.select("#sexFilter").node().value;
+        const selectedAgeGroup = d3.select("#ageFilter").node().value;
+
+        const patientData = grouped.get(selectedCase);
+        if (!patientData || patientData.length === 0) {
+          g.selectAll("*").remove();
+          svg.select(".legend").remove();
+          return;
+        }
+
+        let filtered = data;
+        if (selectedSex !== "all") {
+          filtered = filtered.filter(d => d.sex === selectedSex);
+        }
+        if (selectedAgeGroup !== "all") {
+          filtered = filtered.filter(d => getAgeGroup(d.age) === selectedAgeGroup);
+        }
+
+        const avgScores = groupScores(filtered);
+        const patientScores = groupScores(patientData);
+        const labels = Object.keys(categories);
+
+        const angleSlice = (2 * Math.PI) / labels.length;
+        const radarData = [
+          { group: "Average", ...avgScores },
+          { group: `Case ${selectedCase}`, ...patientScores }
+        ];
+
+        const maxVal = d3.max(labels.map(k => Math.max(avgScores[k], patientScores[k])));
+
+        g.selectAll("*").remove();
+
+        // Axes
+        labels.forEach((label, i) => {
+          const angle = angleSlice * i - Math.PI / 2;
+          const x = Math.cos(angle) * radius;
+          const y = Math.sin(angle) * radius;
+
+          g.append("line").attr("x1", 0).attr("y1", 0).attr("x2", x).attr("y2", y).attr("stroke", "#ccc");
+          g.append("text")
+            .attr("x", x * 1.1)
+            .attr("y", y * 1.1)
+            .attr("text-anchor", "middle")
+            .attr("class", "axisLabel")
+            .text(label);
+        });
+
+        function getPath(obj) {
+          return d3.lineRadial()
+            .radius((d, i) => radius * ((obj[d] || 0) / maxVal))
+            .angle((d, i) => i * angleSlice)
+            (labels);
+        }
+
+        g.selectAll(".radar")
+          .data(radarData)
+          .enter()
+          .append("path")
+          .attr("class", (d, i) => i === 0 ? "radarArea average-shape" : "radarArea me-shape")
+          .attr("d", d => getPath(d))
+          .attr("stroke", (d, i) => colors[i])
+          .attr("fill", (d, i) => colors[i]);
+
+        svg.select(".legend").remove();
+        const legendLabels = ["Average", `Case ${selectedCase}`];
+        const legend = svg.append("g")
+          .attr("class", "legend")
+          .attr("transform", `translate(20,20)`);
+
+        legend.selectAll("rect")
+          .data(legendLabels)
+          .enter()
+          .append("rect")
+          .attr("x", 0)
+          .attr("y", (d, i) => i * 20)
+          .attr("width", 15)
+          .attr("height", 15)
+          .attr("fill", (d, i) => colors[i])
+          .on("mouseover", (event, d) => {
+            const target = d.includes("Average") ? ".average-shape" : ".me-shape";
+            const other = d.includes("Average") ? ".me-shape" : ".average-shape";
+            d3.selectAll(target).attr("fill-opacity", 0.6).attr("stroke-width", 3);
+            d3.selectAll(other).attr("fill-opacity", 0.1).attr("stroke-width", 1);
+          })
+          .on("mouseout", () => {
+            d3.selectAll(".radarArea").attr("fill-opacity", 0.3).attr("stroke-width", 2);
+          });
+
+        legend.selectAll("text")
+          .data(legendLabels)
+          .enter()
+          .append("text")
+          .attr("x", 20)
+          .attr("y", (d, i) => i * 20 + 12)
+          .text(d => d);
+      }
+    });
+  </script>
+</body>
+</html>

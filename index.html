@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
   <meta charset="utf-8">
   <title>Spider Chart: Blood Profile Comparison</title>
@@ -11,14 +11,6 @@
   <h2 style="text-align:center">Spider Chart: Blood Profile Comparison</h2>
 
   <div style="text-align:center; margin-bottom: 10px;">
-    Case ID:
-    <select id="caseSelect"></select>
-    Gender:
-    <select id="sexFilter">
-      <option value="all">All</option>
-      <option value="M">Male</option>
-      <option value="F">Female</option>
-    </select>
     Age Group:
     <select id="ageFilter">
       <option value="all">All</option>
@@ -27,10 +19,35 @@
       <option value="60-79">60–79</option>
       <option value="80+">80+</option>
     </select>
+    
+    Gender:
+    <select id="sexFilter">
+      <option value="all">All</option>
+      <option value="M">Male</option>
+      <option value="F">Female</option>
+    </select>
+  
+    Height Range:
+    <select id="heightRange">
+      <option value="all">All</option>
+      <option value="150-160">150-160 cm</option>
+      <option value="160-170">160-170 cm</option>
+      <option value="170-180">170-180 cm</option>
+      <option value="180+">180+ cm</option>
+    </select>
+  
+    Weight Range:
+    <select id="weightRange">
+      <option value="all">All</option>
+      <option value="50-60">50-60 kg</option>
+      <option value="60-70">60-70 kg</option>
+      <option value="70-80">70-80 kg</option>
+      <option value="80+">80+ kg</option>
+    </select>
   </div>
+  
 
   <svg width="600" height="600"></svg>
-
-  <script src="script.js"></script>
 </body>
+<script src="script.js"></script>
 </html>
