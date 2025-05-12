@@ -58,6 +58,13 @@ d3.json("data.json").then(data => {
       "Electrolytes & Metabolic Panel":   ["gluc","na","k","ica","cl","hco3"],
       "Coagulation & Blood Gases":        ["ptinr","pt%","ptsec","aptt","fib","ph","pco2","po2","be","sao2"]
     };
+
+    const testMeans = {};
+        Object.values(clinical).flat().forEach(test => {
+          const values = filt.map(d => +d[test]).filter(v => isFinite(v));
+          testMeans[test] = values.length ? d3.mean(values) : null;
+        });
+
     const groups = Object.keys(clinical);
 
     // compute means
@@ -123,8 +130,16 @@ d3.json("data.json").then(data => {
           d3.select(this)
             .transition().duration(100)
             .attr("r", 6).attr("fill", "#3367d6");
-          chartTip.text(`${gp}: ${means[gp].toFixed(2)}`)
-                  .style("opacity",1);
+          const labList = clinical[gp];
+          const rows = labList.map(name => {
+            const val = testMeans[name];
+            return `${name}: ${val !== null ? val.toFixed(2) : "N/A"}`;
+          });
+          chartTip.html(
+            `<strong>${gp}</strong>: ${means[gp].toFixed(2)}<br/>
+            <em>Includes:</em><br/>${rows.join("<br/>")}`
+          )
+          .style("opacity", 1);
         })
         .on("mousemove", event => {
           chartTip.style("top",  `${event.pageY-10}px`)
