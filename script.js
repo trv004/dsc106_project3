@@ -152,17 +152,6 @@ d3.json("data.json").then(data => {
           chartTip.style("opacity",0);
         });
     });
-
-    // legend
-    svg.selectAll(".legend").remove();
-    const legend = svg.append("g")
-      .attr("class","legend")
-      .attr("transform","translate(20,20)");
-    legend.append("rect")
-      .attr("width",15).attr("height",15).attr("fill","steelblue");
-    legend.append("text")
-      .attr("x",20).attr("y",12)
-      .text("Average");
   }
 
   // wire sliders

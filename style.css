@@ -8,7 +8,7 @@ body {
   text-align: center;
 }
 h2 {
-  margin: 20px 0 10px;
+  margin: 2em, 5em;
 }
 
 .controls {
@@ -113,4 +113,52 @@ input[type="range"]:active::-webkit-slider-thumb { background: #2a56c6; }
 .axisLabel {
   font-size: 11px;
   fill: #333;
+}
+
+
+.data-note {
+  background-color: #f9f9f9;
+  border: 1px solid #dcdcdc;
+  padding: 20px;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  font-family: Arial, sans-serif;
+  margin: 20px auto;
+  max-width: 800px;
+  box-sizing: border-box;
+  text-align: left;
+}
+
+.data-note strong {
+  font-size: 1em;
+  color: #333;
+}
+
+.data-note pre {
+  background-color: #f4f4f4;
+  border: 1px solid #ccc;
+  padding: 10px;
+  border-radius: 4px;
+  font-family: "Courier New", monospace;
+  white-space: pre-wrap;
+  word-wrap: break-word;
+  margin: 15px 0;
+  overflow-x: auto;
+}
+
+.data-note ul {
+  padding-left: 20px;
+  margin-top: 10px;
+}
+
+.data-note ul li {
+  font-size: 1em;
+  color: #555;
+}
+
+.data-note p {
+  color: #555;
+  font-size: 1em;
+  line-height: 1.5;
+  margin-bottom: 1em;
 }
