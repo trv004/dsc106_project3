@@ -1,169 +1,164 @@
-const svg = d3.select("svg"),
-      width = +svg.attr("width"),
-      height = +svg.attr("height"),
-      radius = Math.min(width, height) / 2 - 60,
-      g = svg.append("g").attr("transform", `translate(${width / 2},${height / 2})`);
+// script.js
 
-const colors = ["steelblue"];
+//Grab the SVG by its ID and ensure width/height attrs exist
+const svg = d3.select("#chart");
+const width  = +svg.attr("width");
+const height = +svg.attr("height");
+const radius = Math.min(width, height) / 2 - 60;
 
-// Tooltip
-const tooltip = d3.select("body").append("div")
-  .attr("class", "tooltip")
-  .style("position", "absolute")
-  .style("visibility", "hidden")
-  .style("background", "#fff")
-  .style("border", "1px solid #ccc")
-  .style("padding", "6px 10px")
-  .style("border-radius", "4px")
-  .style("font-size", "12px")
-  .style("box-shadow", "0 2px 6px rgba(0,0,0,0.1)");
+const g = svg.append("g")
+             .attr("transform", `translate(${width/2},${height/2})`);
 
-function getAgeGroup(age) {
-  if (age < 40) return "20-39";
-  if (age < 60) return "40-59";
-  if (age < 80) return "60-79";
-  return "80+";
+// Controls & tooltips
+const ageSlider    = d3.select("#ageSlider"),
+      heightSlider = d3.select("#heightSlider"),
+      weightSlider = d3.select("#weightSlider"),
+      sexFilter    = d3.select("#sexFilter"),
+      ageTip       = d3.select("#ageSliderTooltip"),
+      heightTip    = d3.select("#heightSliderTooltip"),
+      weightTip    = d3.select("#weightSliderTooltip");
+
+// Chart‐dot floating tooltip
+const chartTip = d3.select("body")
+  .append("div")
+  .attr("class","tooltip");
+
+// Slider bubble helper
+function showTip(slider, tip, val) {
+  const min = +slider.attr("min"),
+        max = +slider.attr("max"),
+        pct = (val - min) / (max - min),
+        w   = slider.node().offsetWidth,
+        x   = pct * w;
+  tip.style("left", `${x}px`)
+     .text(val)
+     .style("opacity", 1);
 }
 
-function getHeightGroup(height) {
-  if (height < 160) return "150-160";
-  if (height < 170) return "160-170";
-  if (height < 180) return "170-180";
-  return "180+";
-}
-
-function getWeightGroup(weight) {
-  if (weight < 60) return "50-60";
-  if (weight < 70) return "60-70";
-  if (weight < 80) return "70-80";
-  return "80+";
-}
-
+// Load & draw/update
 d3.json("data.json").then(data => {
-  d3.selectAll("#sexFilter, #ageFilter, #heightRange, #weightRange").on("change", update);
-  update();
+  function updateChart() {
+    // filters
+    const maxAge    = +ageSlider.node().value,
+          maxHeight = +heightSlider.node().value,
+          maxWeight = +weightSlider.node().value,
+          sex       = sexFilter.node().value;
 
-  function update() {
-    const selectedSex = d3.select("#sexFilter").node().value;
-    const selectedAgeGroup = d3.select("#ageFilter").node().value;
-    const selectedHeightRange = d3.select("#heightRange").node().value;
-    const selectedWeightRange = d3.select("#weightRange").node().value;
+    let filt = data
+      .filter(d => +d.age    <= maxAge)
+      .filter(d => +d.height <= maxHeight)
+      .filter(d => +d.weight <= maxWeight);
+    if (sex !== "all") filt = filt.filter(d => d.sex === sex);
 
-    let filtered = data;
-
-    if (selectedSex !== "all") filtered = filtered.filter(d => d.sex === selectedSex);
-    if (selectedAgeGroup !== "all") filtered = filtered.filter(d => getAgeGroup(d.age) === selectedAgeGroup);
-    if (selectedHeightRange !== "all") filtered = filtered.filter(d => getHeightGroup(d.height) === selectedHeightRange);
-    if (selectedWeightRange !== "all") filtered = filtered.filter(d => getWeightGroup(d.weight) === selectedWeightRange);
-
-    // Define test categories
-    const clinicalGroups = {
-      "Blood Cell & Inflammation Markers": ["wbc", "hb", "hct", "plt", "esr", "crp"],
-      "Liver & Protein Function": ["tprot", "alb", "tbil", "ast", "alt", "ammo"],
-      "Kidney Function & Metabolic Waste": ["bun", "cr", "gfr", "ccr", "lac"],
-      "Electrolytes & Metabolic Panel": ["gluc", "na", "k", "ica", "cl", "hco3"],
-      "Coagulation & Blood Gases": ["ptinr", "pt%", "ptsec", "aptt", "fib", "ph", "pco2", "po2", "be", "sao2"]
+    // clinical group keys
+    const clinical = {
+      "Blood Cell & Inflammation Markers": ["wbc","hb","hct","plt","esr","crp"],
+      "Liver & Protein Function":         ["tprot","alb","tbil","ast","alt","ammo"],
+      "Kidney Function & Metabolic Waste":["bun","cr","gfr","ccr","lac"],
+      "Electrolytes & Metabolic Panel":   ["gluc","na","k","ica","cl","hco3"],
+      "Coagulation & Blood Gases":        ["ptinr","pt%","ptsec","aptt","fib","ph","pco2","po2","be","sao2"]
     };
+    const groups = Object.keys(clinical);
 
-    const groupNames = Object.keys(clinicalGroups);
-    const groupScores = {};
-    const maxVals = {};
-
-    // Compute averages for each group
-    groupNames.forEach(group => {
-      const tests = clinicalGroups[group];
-      const groupVals = [];
-
-      tests.forEach(test => {
-        const values = filtered.map(d => +d[test]).filter(v => Number.isFinite(v));
-        groupVals.push(...values);
-      });
-
-      const avg = groupVals.length > 0 ? d3.mean(groupVals) : 0;
-      const max = groupVals.length > 0 ? d3.max(groupVals) : 1;
-
-      groupScores[group] = avg;
-      maxVals[group] = max;
+    // compute means
+    const means = {};
+    groups.forEach(gp => {
+      const vals = clinical[gp]
+        .flatMap(key => filt.map(d => +d[key]).filter(v => isFinite(v)));
+      means[gp] = vals.length ? d3.mean(vals) : 0;
     });
 
-    const angleSlice = (2 * Math.PI) / groupNames.length;
-    const maxVal = d3.max(Object.values(groupScores)) || 1;
-
+    // clear old drawing
     g.selectAll("*").remove();
 
-    // Axes
-    groupNames.forEach((group, i) => {
-      const angle = angleSlice * i - Math.PI / 2;
-      const x = Math.cos(angle) * radius;
-      const y = Math.sin(angle) * radius;
+    // angles & max scale
+    const angleSlice = 2 * Math.PI / groups.length,
+          maxVal     = d3.max(Object.values(means)) || 1;
 
-      g.append("line").attr("x1", 0).attr("y1", 0).attr("x2", x).attr("y2", y).attr("stroke", "#ccc");
+    // draw axes + labels
+    groups.forEach((gp,i) => {
+      const ang = i * angleSlice - Math.PI/2,
+            x   = Math.cos(ang) * radius,
+            y   = Math.sin(ang) * radius;
+
+      g.append("line")
+        .attr("x1",0).attr("y1",0)
+        .attr("x2",x).attr("y2",y)
+        .attr("stroke","#ccc");
 
       g.append("text")
-        .attr("x", x * 1.1)
-        .attr("y", y * 1.1)
-        .attr("text-anchor", "middle")
-        .attr("class", "axisLabel")
-        .text(group);
+        .attr("x", x * 1.3)
+        .attr("y", y * 1.3)
+        .attr("text-anchor","middle")
+        .attr("class","axisLabel")
+        .text(gp);
     });
 
-    function getPath(obj) {
-      return d3.lineRadial()
-        .radius((d, i) => radius * ((obj[d] || 0) / maxVal))
-        .angle((d, i) => i * angleSlice)
-        (groupNames);
-    }
+    // radar shape generator
+    const radarLine = d3.lineRadial()
+      .radius((d,i) => radius * (means[d] / maxVal))
+      .angle((d,i) => i * angleSlice);
 
-    const radarData = [{ group: "Average", ...groupScores }];
+    // draw filled area
+    g.append("path")
+      .datum(groups)
+      .attr("d", radarLine)
+      .attr("fill","steelblue")
+      .attr("fill-opacity",0.3)
+      .attr("stroke","steelblue");
 
-    g.selectAll(".radar")
-      .data(radarData)
-      .enter()
-      .append("path")
-      .attr("class", "radarArea average-shape")
-      .attr("d", d => getPath(d))
-      .attr("stroke", colors[0])
-      .attr("fill", colors[0])
-      .attr("fill-opacity", 0.3);
+    // draw hover‐able dots
+    groups.forEach((gp,i) => {
+      const ang = i * angleSlice - Math.PI/2,
+            r0  = radius * (means[gp] / maxVal),
+            x   = Math.cos(ang) * r0,
+            y   = Math.sin(ang) * r0;
 
-    // Data points with tooltips
-    radarData.forEach((d, groupIdx) => {
-      groupNames.forEach((group, i) => {
-        const angle = angleSlice * i - Math.PI / 2;
-        const val = d[group] || 0;
-        const r = radius * (val / maxVal);
-        const x = Math.cos(angle) * r;
-        const y = Math.sin(angle) * r;
-
-        g.append("circle")
-          .attr("cx", x)
-          .attr("cy", y)
-          .attr("r", 4)
-          .attr("fill", colors[groupIdx])
-          .on("mouseover", () => {
-            tooltip.style("visibility", "visible").text(`${group}: ${val.toFixed(2)}`);
-          })
-          .on("mousemove", (event) => {
-            tooltip.style("top", (event.pageY - 10) + "px").style("left", (event.pageX + 10) + "px");
-          })
-          .on("mouseout", () => tooltip.style("visibility", "hidden"));
-      });
+      g.append("circle")
+        .attr("cx", x).attr("cy", y)
+        .attr("r", 4)
+        .attr("fill","steelblue")
+        .style("cursor","pointer")
+        .on("mouseover", function(event) {
+          d3.select(this)
+            .transition().duration(100)
+            .attr("r", 6).attr("fill", "#3367d6");
+          chartTip.text(`${gp}: ${means[gp].toFixed(2)}`)
+                  .style("opacity",1);
+        })
+        .on("mousemove", event => {
+          chartTip.style("top",  `${event.pageY-10}px`)
+                  .style("left", `${event.pageX+10}px`);
+        })
+        .on("mouseout", function() {
+          d3.select(this)
+            .transition().duration(100)
+            .attr("r", 4).attr("fill", "steelblue");
+          chartTip.style("opacity",0);
+        });
     });
 
-    // Legend
-    svg.select(".legend").remove();
+    // legend
+    svg.selectAll(".legend").remove();
     const legend = svg.append("g")
-      .attr("class", "legend")
-      .attr("transform", `translate(20,20)`);
-
+      .attr("class","legend")
+      .attr("transform","translate(20,20)");
     legend.append("rect")
-      .attr("width", 15)
-      .attr("height", 15)
-      .attr("fill", colors[0]);
-
+      .attr("width",15).attr("height",15).attr("fill","steelblue");
     legend.append("text")
-      .attr("x", 20)
-      .attr("y", 12)
+      .attr("x",20).attr("y",12)
       .text("Average");
   }
+
+  // wire sliders
+  ageSlider.on("input",    () => { showTip(ageSlider, ageTip, +ageSlider.node().value); updateChart(); })
+           .on("change",   () => ageTip.style("opacity",0));
+  heightSlider.on("input", () => { showTip(heightSlider, heightTip, +heightSlider.node().value); updateChart(); })
+              .on("change",() => heightTip.style("opacity",0));
+  weightSlider.on("input", () => { showTip(weightSlider, weightTip, +weightSlider.node().value); updateChart(); })
+              .on("change",() => weightTip.style("opacity",0));
+  sexFilter.on("change", updateChart);
+
+  // initial draw
+  updateChart();
 });

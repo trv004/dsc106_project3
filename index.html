@@ -1,53 +1,53 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="utf-8">
+  <meta charset="utf-8" />
   <title>Spider Chart: Blood Profile Comparison</title>
-  <script src="https://d3js.org/d3.v7.min.js"></script>
-  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="style.css" />
 </head>
 <body>
+  <h2>Spider Chart: Blood Profile Comparison</h2>
 
-  <h2 style="text-align:center">Spider Chart: Blood Profile Comparison</h2>
-
-  <div style="text-align:center; margin-bottom: 10px;">
-    Age Group:
-    <select id="ageFilter">
-      <option value="all">All</option>
-      <option value="20-39">20–39</option>
-      <option value="40-59">40–59</option>
-      <option value="60-79">60–79</option>
-      <option value="80+">80+</option>
-    </select>
-    
-    Gender:
-    <select id="sexFilter">
-      <option value="all">All</option>
-      <option value="M">Male</option>
-      <option value="F">Female</option>
-    </select>
-  
-    Height Range:
-    <select id="heightRange">
-      <option value="all">All</option>
-      <option value="150-160">150-160 cm</option>
-      <option value="160-170">160-170 cm</option>
-      <option value="170-180">170-180 cm</option>
-      <option value="180+">180+ cm</option>
-    </select>
-  
-    Weight Range:
-    <select id="weightRange">
-      <option value="all">All</option>
-      <option value="50-60">50-60 kg</option>
-      <option value="60-70">60-70 kg</option>
-      <option value="70-80">70-80 kg</option>
-      <option value="80+">80+ kg</option>
-    </select>
+  <!-- CONTROLS ROW -->
+  <div class="controls">
+    <div class="slider-container">
+      <label for="ageSlider">Age</label>
+      <input type="range" id="ageSlider" min="0" max="100" value="100" />
+      <div class="slider-tooltip" id="ageSliderTooltip"></div>
+    </div>
+    <div class="slider-container">
+      <label for="heightSlider">Height (cm)</label>
+      <input type="range" id="heightSlider" min="100" max="210" value="210" />
+      <div class="slider-tooltip" id="heightSliderTooltip"></div>
+    </div>
+    <div class="slider-container">
+      <label for="weightSlider">Weight (kg)</label>
+      <input type="range" id="weightSlider" min="30" max="150" value="150" />
+      <div class="slider-tooltip" id="weightSliderTooltip"></div>
+    </div>
+    <div class="select-container">
+      <label for="sexFilter">Gender:</label>
+      <select id="sexFilter">
+        <option value="all">All</option>
+        <option value="M">Male</option>
+        <option value="F">Female</option>
+      </select>
+    </div>
   </div>
-  
 
-  <svg width="600" height="600"></svg>
+  <!-- CHART ROW -->
+  <div class="chart-container">
+    <svg
+      id="chart"
+      width="600"
+      height="600"
+      viewBox="0 0 600 600"
+      preserveAspectRatio="xMidYMid meet">
+      <!-- D3 will draw into this -->
+    </svg>
+  </div>
+
+  <script src="https://d3js.org/d3.v7.min.js"></script>
+  <script src="script.js"></script>
 </body>
-<script src="script.js"></script>
 </html>
