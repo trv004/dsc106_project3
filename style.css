@@ -37,3 +37,12 @@ body {
     cursor: pointer;
   }
   
+  .tooltip {
+  position: absolute;
+  background: white;
+  padding: 8px;
+  border: 1px solid #999;
+  border-radius: 5px;
+  pointer-events: none;
+  font-size: 14px;
+}
