@@ -8,7 +8,11 @@ body {
   text-align: center;
 }
 h2 {
-  margin: 2em, 5em;
+  margin: 2em, 5em, 0, 5em;
+}
+
+h4 {
+  margin: 0, 5em, 2em, 5em;
 }
 
 .controls {
