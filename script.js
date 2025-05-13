@@ -18,6 +18,11 @@ const ageSlider    = d3.select("#ageSlider"),
       heightTip    = d3.select("#heightSliderTooltip"),
       weightTip    = d3.select("#weightSliderTooltip");
 
+// **ADDED**: grab the spans next to each label
+const ageValue    = d3.select("#ageValue"),
+      heightValue = d3.select("#heightValue"),
+      weightValue = d3.select("#weightValue");
+
 // Chart‐dot floating tooltip
 const chartTip = d3.select("body")
   .append("div")
@@ -44,6 +49,11 @@ d3.json("data.json").then(data => {
           maxWeight = +weightSlider.node().value,
           sex       = sexFilter.node().value;
 
+    // **ADDED**: update the label‐spans live
+    ageValue.text(maxAge);
+    heightValue.text(maxHeight);
+    weightValue.text(maxWeight);
+
     let filt = data
       .filter(d => +d.age    <= maxAge)
       .filter(d => +d.height <= maxHeight)
@@ -60,10 +70,10 @@ d3.json("data.json").then(data => {
     };
 
     const testMeans = {};
-        Object.values(clinical).flat().forEach(test => {
-          const values = filt.map(d => +d[test]).filter(v => isFinite(v));
-          testMeans[test] = values.length ? d3.mean(values) : null;
-        });
+    Object.values(clinical).flat().forEach(test => {
+      const values = filt.map(d => +d[test]).filter(v => isFinite(v));
+      testMeans[test] = values.length ? d3.mean(values) : null;
+    });
 
     const groups = Object.keys(clinical);
 
@@ -82,23 +92,42 @@ d3.json("data.json").then(data => {
     const angleSlice = 2 * Math.PI / groups.length,
           maxVal     = d3.max(Object.values(means)) || 1;
 
-    // draw axes + labels
+    // draw axes + **BOLDED & BOXED** labels
     groups.forEach((gp,i) => {
       const ang = i * angleSlice - Math.PI/2,
             x   = Math.cos(ang) * radius,
             y   = Math.sin(ang) * radius;
 
+      // axis line
       g.append("line")
-        .attr("x1",0).attr("y1",0)
-        .attr("x2",x).attr("y2",y)
-        .attr("stroke","#ccc");
+        .attr("x1", 0).attr("y1", 0)
+        .attr("x2", x).attr("y2", y)
+        .attr("stroke", "#ccc");
 
-      g.append("text")
-        .attr("x", x * 1.3)
-        .attr("y", y * 1.3)
-        .attr("text-anchor","middle")
-        .attr("class","axisLabel")
+      // grouped label (for rect + text)
+      const labelGroup = g.append("g")
+        .attr("transform", `translate(${x * 1.3},${y * (i === 0 ? 1.1 : 1.3)})`);
+
+      // bold text
+      const text = labelGroup.append("text")
+        .attr("text-anchor", "middle")
+        .attr("class", "axisLabel")
+        .style("font-weight", "bold")
         .text(gp);
+
+      // get text dimensions
+      const bbox = text.node().getBBox();
+
+      // draw box behind text
+      labelGroup.insert("rect", "text")
+        .attr("x",      bbox.x - 6)
+        .attr("y",      bbox.y - 4)
+        .attr("width",  bbox.width + 12)
+        .attr("height", bbox.height + 8)
+        .attr("rx",     4)
+        .attr("fill",   "white")
+        .attr("stroke", "#999")
+        .attr("stroke-width", 1);
     });
 
     // radar shape generator
@@ -137,7 +166,7 @@ d3.json("data.json").then(data => {
           });
           chartTip.html(
             `<strong>${gp}</strong>: ${means[gp].toFixed(2)}<br/>
-            <em>Includes:</em><br/>${rows.join("<br/>")}`
+             <em>Includes:</em><br/>${rows.join("<br/>")}`
           )
           .style("opacity", 1);
         })
@@ -155,14 +184,59 @@ d3.json("data.json").then(data => {
   }
 
   // wire sliders
-  ageSlider.on("input",    () => { showTip(ageSlider, ageTip, +ageSlider.node().value); updateChart(); })
-           .on("change",   () => ageTip.style("opacity",0));
-  heightSlider.on("input", () => { showTip(heightSlider, heightTip, +heightSlider.node().value); updateChart(); })
-              .on("change",() => heightTip.style("opacity",0));
-  weightSlider.on("input", () => { showTip(weightSlider, weightTip, +weightSlider.node().value); updateChart(); })
-              .on("change",() => weightTip.style("opacity",0));
+  ageSlider
+    .on("input",    () => {
+      const v = +ageSlider.node().value;
+      ageValue.text(v);
+      showTip(ageSlider, ageTip, v);
+      updateChart();
+    })
+    .on("change",   () => ageTip.style("opacity",0));
+
+  heightSlider
+    .on("input", () => {
+      const v = +heightSlider.node().value;
+      heightValue.text(v);
+      showTip(heightSlider, heightTip, v);
+      updateChart();
+    })
+    .on("change",() => heightTip.style("opacity",0));
+
+  weightSlider
+    .on("input", () => {
+      const v = +weightSlider.node().value;
+      weightValue.text(v);
+      showTip(weightSlider, weightTip, v);
+      updateChart();
+    })
+    .on("change",() => weightTip.style("opacity",0));
+
   sexFilter.on("change", updateChart);
 
   // initial draw
   updateChart();
+
+  // --- ADDED: color the select based on choice ---
+  function styleSexFilter() {
+    const v = sexFilter.node().value;
+    let bg, col;
+    if (v === "M") {
+      bg  = "#cce5ff";
+      col = "#003366";
+    } else if (v === "F") {
+      bg  = "#ffccdd";
+      col = "#800040";
+    } else {
+      bg  = "white";
+      col = "#333";
+    }
+    sexFilter
+      .style("background-color", bg)
+      .style("color", col);
+  }
+
+  sexFilter
+    .on("change.style", styleSexFilter)
+    .dispatch("change");
+
 });

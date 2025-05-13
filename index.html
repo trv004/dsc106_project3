@@ -6,26 +6,40 @@
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-  <h2>How Does My Health Compare to Patients Like Me?</h2>
+  <h2>Spider Chart: Blood Profile Comparison</h2>
   <p>An Interactive Exploration of Lab Results by Age, Gender, Height, and Weight Among Surgical Patients.</p>
 
   <!-- CONTROLS ROW -->
   <div class="controls">
+
+    <!-- AGE -->
     <div class="slider-container">
-      <label for="ageSlider">Age</label>
-      <input type="range" id="ageSlider" min="0" max="100" value="100" />
+      <label for="ageSlider">
+        Age: <span id="ageValue" class="slider-value">50</span>
+      </label>
+      <input type="range" id="ageSlider" min="0" max="100" value="50" />
       <div class="slider-tooltip" id="ageSliderTooltip"></div>
     </div>
+
+    <!-- HEIGHT -->
     <div class="slider-container">
-      <label for="heightSlider">Height (cm)</label>
-      <input type="range" id="heightSlider" min="100" max="210" value="210" />
+      <label for="heightSlider">
+        Height (cm): <span id="heightValue" class="slider-value">155</span>
+      </label>
+      <input type="range" id="heightSlider" min="100" max="210" value="155" />
       <div class="slider-tooltip" id="heightSliderTooltip"></div>
     </div>
+
+    <!-- WEIGHT -->
     <div class="slider-container">
-      <label for="weightSlider">Weight (kg)</label>
-      <input type="range" id="weightSlider" min="30" max="150" value="150" />
+      <label for="weightSlider">
+        Weight (kg): <span id="weightValue" class="slider-value">90</span>
+      </label>
+      <input type="range" id="weightSlider" min="30" max="150" value="90" />
       <div class="slider-tooltip" id="weightSliderTooltip"></div>
     </div>
+
+    <!-- GENDER SELECT -->
     <div class="select-container">
       <label for="sexFilter">Gender:</label>
       <select id="sexFilter">
@@ -48,26 +62,56 @@
     </svg>
   </div>
 
-<<<<<<< HEAD
+
   <section class="write-up">
     <p>
-      We created an interactive radar chart that helps us compare and understand how our blood work stacks 
-      up against the average lab values, according to our age, height, weight, and gender. We wanted the 
-      visualization interface to feel personal and have some exploratory elements so that you can see the 
-      typical blood results for someone with similar demographics as you, or just play with the sliders 
-      and dropdown and see some patterns within the blood results. When filtering using the sliders and 
-      dropdown, the radar chart recomputes the average results for the selected demographic, so you can 
-      see the snapshot for that specific demographic and compare it to others or yourself.
+      We created an interactive radar chart that helps us compare and understand how differences in age, height, weight,
+      and gender will affect lab values analyzing body health, based on average lab values from surgical patients. We wanted 
+      the visualization interface to feel personal, and have some exploratory elements. For example, you can see the typical 
+      lab results for someone with similar demographics as you, or just play with the sliders and dropdown and see some patterns 
+      within the lab results. When filtering using the sliders and dropdown, the radar chart recomputes the average results for 
+      the selected demographic, so you can see the snapshot for that specific demographic and compare it to the surgical patients.
     </p>
+
     <p>
-      In designing this radar chart, we grouped all individual lab tests into five categories (Blood Cells &amp; 
-      Inflammation, Electrolytes &amp; Metabolic Panel, Liver &amp; Protein Function, Coagulation &amp; Blood 
-      Gases, and Kidney &amp; Waste Clearance). Each test is then scaled between 0 and 1 based on its 
-      published reference range, allowing us to normalize and directly compare scores across tests.
+      The process in designing this radar chart involved taking all the individual lab tests and grouping them into five categories 
+      (Blood Cells & Inflammation, Electrolytes & Metabolic Panel, Liver & Protein Function, Coagulation & Blood Gases, and Kidney & 
+      Waste Clearance). Since each lab test had different units, we normalized all the values first based on the reference values given 
+      in each test (eg. [value - (reference min.)]/[(reference max.) - (reference min.)). In the process of normalizing, we cut each value 
+      at 0 and 1, so values outside of that range would be capped at those bounds, allowing for a cleaner radar chart. From there, we averaged 
+      the normalized values in each group to get the scores per group. Furthermore, we added tooltips that include the lab results in each grouping
+      and the averages per test.
+    </p>
+
+    <p>
+      Each of us created two visualizations, then we narrowed it down to one for the final submissions and brainstormed ways to improve it. The 
+      creation of each brainstormed visual took approximately 1 to 2 hours total, with another 30 minutes to decide on a final visual and discuss 
+      improvements to be made for the final product. We ended up going with the radar chart that John Wesley made, as we felt it was able to show the 
+      breakdown of all the lab results in a clean format. From there, we decided to take a deeper dive into the data, making sure the units we were displaying 
+      were all uniform.
+    </p>
+
+    <p>
+      Kate preprocessed the data by pivoting the DataFrame to include one column per test, normalizing the values to be scaled between 0 and 1, and then exporting 
+      it to a JSON file. The preprocessing of the data took around 2 hours, as there was a lot to understand within the structure of the data and how to normalize 
+      the values. From there, Tracy grouped the lab tests into five different health categories so the radar chart would not be too crowded. She recorded the average 
+      test values within each group inside a tooltip. The grouping and start of the tooltips took around 1 hour total.
+    </p>
+
+    <p>
+      John Wesley further customized the visualization by redesigning the filtering tools to be sliders instead of drop-down menus for easier user interaction. This 
+      allows users to see the changes in the radar chart in real time as they move each slider. He also changed the tooltip to become larger when hovered over for a 
+      more convenient user interface. In total, these modifications took around 1 hour to complete. Then Daniel added more information within the tooltips, including 
+      the lab results that each group contains and the averages for each group.
+    </p>
+
+    <p>
+      Overall, the part that took the longest was the data preprocessing. Another part that took longer to complete was the polishing of the radar chart design, done 
+      by John Wesley. Other contributions included the creation of the repository (Tracy), the creation of the guiding question (Kate), and the write-up that everyone took part in.
+
     </p>
   </section>
   
-=======
   <div class="data-note">
   <p><strong>Note:</strong> Lab test results were normalized using reference ranges specific to each test. For each result, the normalized value was calculated as:</p>
 
@@ -85,7 +129,6 @@
   <p>This normalization allows for comparability across different lab tests. For each user-defined group (based on age, gender, height, and weight), normalized values were averaged to produce a composite score for each test.</p>
   </div>
 
->>>>>>> 15eb740f33a03fb0304e51f8e9cc7beca0bcb171
 
   <script src="https://d3js.org/d3.v7.min.js"></script>
   <script src="script.js"></script>

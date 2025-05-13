@@ -84,15 +84,15 @@ input[type="range"]:active::-webkit-slider-thumb { background: #2a56c6; }
 }
 
 .chart-container {
-  max-width: 800px;     /* same max width as controls */
-  margin: 0 auto 40px;  /* center + bottom margin */
+  max-width: 800px;   
+  margin: 0 auto 40px; 
   display: flex;
   justify-content: center;
 }
 #chart {
   width: 100%;
   height: auto;
-  overflow: visible;    /* allow long axis labels */
+  overflow: visible;   
   display: block;
 }
 
@@ -162,3 +162,56 @@ input[type="range"]:active::-webkit-slider-thumb { background: #2a56c6; }
   line-height: 1.5;
   margin-bottom: 1em;
 }
+
+section.write-up {
+  max-width: 800px;      
+  margin: 0 auto 40px;  
+  text-align: left;         
+}
+
+.controls {
+  display: flex;
+  align-items: center;
+  justify-content: space-around;  
+  gap: 1rem;
+  
+  padding: 1rem 1.5rem;
+  margin: 1rem auto;
+  max-width: 900px;              
+  
+  border: 2px solid #ccc;
+  border-radius: 999px;          
+  background-color: #fafafa;
+}
+
+.slider-container {
+  position: relative;      
+  margin: 0 1rem;
+}
+
+.slider-tooltip {
+  position: absolute;
+  top: -1.6rem;             
+  left: 0;                   
+  transform: translateX(-50%);
+  background: #fff;
+  padding: 0.2rem 0.4rem;
+  border-radius: 4px;
+  font-size: 0.8rem;
+  color: #333;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.1s;
+}
+
+#sexFilter option[value="M"] {
+  background-color: #cce5ff;
+  color: #003366;
+}
+
+#sexFilter option[value="F"] {
+  background-color: #ffccdd;
+  color: #800040;
+}
+
+
