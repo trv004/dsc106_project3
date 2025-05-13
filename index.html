@@ -2,12 +2,12 @@
 <html lang="en">
 <head>
   <meta charset="utf-8" />
-  <title>Spider Chart: Blood Profile Comparison</title>
+  <title>How Does My Health Compare to Patients Like Me?</title>
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-  <h2>Spider Chart: Blood Profile Comparison</h2>
-  <p>An Interactive Exploration of Lab Results by Age, Gender, Height, and Weight Among Surgical Patients.</p>
+  <h2>How Does My Health Compare to Patients Like Me?</h2>
+  <p>An Interactive Exploration of Averaged Lab Results by Age, Gender, Height, and Weight Among Surgical Patients.</p>
 
   <!-- CONTROLS ROW -->
   <div class="controls">
@@ -77,7 +77,7 @@
       The process in designing this radar chart involved taking all the individual lab tests and grouping them into five categories 
       (Blood Cells & Inflammation, Electrolytes & Metabolic Panel, Liver & Protein Function, Coagulation & Blood Gases, and Kidney & 
       Waste Clearance). Since each lab test had different units, we normalized all the values first based on the reference values given 
-      in each test (eg. [value - (reference min.)]/[(reference max.) - (reference min.)). In the process of normalizing, we cut each value 
+      in each test (see data notes below). In the process of normalizing, we cut each value 
       at 0 and 1, so values outside of that range would be capped at those bounds, allowing for a cleaner radar chart. From there, we averaged 
       the normalized values in each group to get the scores per group. Furthermore, we added tooltips that include the lab results in each grouping
       and the averages per test.

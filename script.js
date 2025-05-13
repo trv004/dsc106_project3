@@ -1,6 +1,39 @@
-// script.js
+const labInfo = {
+  wbc:  "White blood cell score",
+  hb:   "Hemoglobin score",
+  hct:  "Hematocrit score",
+  plt:  "Platelet score",
+  esr:  "Erythrocyte sedimentation score",
+  crp:  "C-reactive protein score",
+  tprot:"Total protein score",
+  alb:  "Albumin score",
+  tbil: "Total bilirubin score",
+  ast:  "Aspartate transferase score",
+  alt:  "Alanine transferase score",
+  ammo: "Ammonia score",
+  bun:  "Blood urea nitrogen score",
+  cr:   "Creatinine score",
+  gfr:  "Glomerular filtration score",
+  ccr:  "Creatinine clearance score",
+  lac:  "Lactate score",
+  gluc: "Glucose score",
+  na:   "Sodium score",
+  k:    "Potassium score",
+  ica:  "Ionized calcium score",
+  cl:   "Chloride score",
+  hco3: "Bicarbonate (HCO₃) score",
+  ptinr:"Prothrombin time INR score",
+  aptt: "Activated partial thromboplastin time score",
+  fib:  "Fibrinogen score",
+  ph:   "Blood pH score",
+  pco2: "Partial pressure CO₂ score",
+  po2:  "Partial pressure O₂ score",
+  be:   "Base excess score",
+  sao2: "Oxygen saturation score"
+};
 
-//Grab the SVG by its ID and ensure width/height attrs exist
+
+
 const svg = d3.select("#chart");
 const width  = +svg.attr("width");
 const height = +svg.attr("height");
@@ -66,7 +99,7 @@ d3.json("data.json").then(data => {
       "Liver & Protein Function":         ["tprot","alb","tbil","ast","alt","ammo"],
       "Kidney Function & Metabolic Waste":["bun","cr","gfr","ccr","lac"],
       "Electrolytes & Metabolic Panel":   ["gluc","na","k","ica","cl","hco3"],
-      "Coagulation & Blood Gases":        ["ptinr","pt%","ptsec","aptt","fib","ph","pco2","po2","be","sao2"]
+      "Coagulation & Blood Gases":        ["ptinr","aptt","fib","ph","pco2","po2","be","sao2"]
     };
 
     const testMeans = {};
@@ -161,13 +194,20 @@ d3.json("data.json").then(data => {
             .attr("r", 6).attr("fill", "#3367d6");
           const labList = clinical[gp];
           const rows = labList.map(name => {
-            const val = testMeans[name];
-            return `${name}: ${val !== null ? val.toFixed(2) : "N/A"}`;
+            const desc = labInfo[name] || name;
+            const val  = testMeans[name];
+            return `${desc}: ${val !== null ? val.toFixed(2) : "N/A"}`;
           });
           chartTip.html(
-            `<strong>${gp}</strong>: ${means[gp].toFixed(2)}<br/>
-             <em>Includes:</em><br/>${rows.join("<br/>")}`
-          )
+            `<strong>${gp} Averaged</strong>: ${means[gp].toFixed(2)}<br/>
+            <em>Includes:</em><br/>
+            ${rows.join("<br/>")}<br/>
+            <small style="display:block; margin-top:6px; color:gray;">
+            All lab test values are normalized between 0 and 1 <br/>
+            Values close to <strong>1</strong> are on the <strong>higher end</strong> of their reference range,<br/>
+            while values close to <strong>0</strong> are on the <strong>lower end</strong>.
+          </small>
+          `)
           .style("opacity", 1);
         })
         .on("mousemove", event => {
