@@ -6,7 +6,8 @@
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-  <h2>Spider Chart: Blood Profile Comparison</h2>
+  <h2>How Does My Health Compare to Patients Like Me?</h2>
+  <p>An Interactive Exploration of Lab Results by Age, Gender, Height, and Weight Among Surgical Patients.</p>
 
   <!-- CONTROLS ROW -->
   <div class="controls">
@@ -47,6 +48,7 @@
     </svg>
   </div>
 
+<<<<<<< HEAD
   <section class="write-up">
     <p>
       We created an interactive radar chart that helps us compare and understand how our blood work stacks 
@@ -65,6 +67,25 @@
     </p>
   </section>
   
+=======
+  <div class="data-note">
+  <p><strong>Note:</strong> Lab test results were normalized using reference ranges specific to each test. For each result, the normalized value was calculated as:</p>
+
+  <pre><code>
+  Normalized Value = (Result - Reference Min) / (Reference Max - Reference Min)
+  </code></pre>
+
+  <p>Values are scaled between 0 and 1, where:</p>
+  <ul>
+      <li><strong>0</strong> represents the lower bound of the normal reference range,</li>
+      <li><strong>1</strong> represents the upper bound,</li>
+      <li>Values outside the reference range are capped at 0 or 1 and do not indicate how far out of range the original value was.</li>
+  </ul>
+
+  <p>This normalization allows for comparability across different lab tests. For each user-defined group (based on age, gender, height, and weight), normalized values were averaged to produce a composite score for each test.</p>
+  </div>
+
+>>>>>>> 15eb740f33a03fb0304e51f8e9cc7beca0bcb171
 
   <script src="https://d3js.org/d3.v7.min.js"></script>
   <script src="script.js"></script>
