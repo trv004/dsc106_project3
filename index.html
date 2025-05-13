@@ -47,6 +47,25 @@
     </svg>
   </div>
 
+  <section class="write-up">
+    <p>
+      We created an interactive radar chart that helps us compare and understand how our blood work stacks 
+      up against the average lab values, according to our age, height, weight, and gender. We wanted the 
+      visualization interface to feel personal and have some exploratory elements so that you can see the 
+      typical blood results for someone with similar demographics as you, or just play with the sliders 
+      and dropdown and see some patterns within the blood results. When filtering using the sliders and 
+      dropdown, the radar chart recomputes the average results for the selected demographic, so you can 
+      see the snapshot for that specific demographic and compare it to others or yourself.
+    </p>
+    <p>
+      In designing this radar chart, we grouped all individual lab tests into five categories (Blood Cells &amp; 
+      Inflammation, Electrolytes &amp; Metabolic Panel, Liver &amp; Protein Function, Coagulation &amp; Blood 
+      Gases, and Kidney &amp; Waste Clearance). Each test is then scaled between 0 and 1 based on its 
+      published reference range, allowing us to normalize and directly compare scores across tests.
+    </p>
+  </section>
+  
+
   <script src="https://d3js.org/d3.v7.min.js"></script>
   <script src="script.js"></script>
 </body>
