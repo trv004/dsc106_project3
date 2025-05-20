@@ -218,4 +218,32 @@ section.write-up {
   color: #800040;
 }
 
+.chart-container {
+  overflow-y: scroll;
+  height: 500px;
+}
 
+.tick text {
+  font-size: 10px;
+}
+
+.tabs {
+  display: flex;
+  justify-content: center;
+  gap: 1rem;
+  margin: 1rem 0;
+}
+
+.tab-button {
+  padding: 8px 16px;
+  border: none;
+  border-radius: 6px;
+  background-color: #eee;
+  cursor: pointer;
+  font-weight: bold;
+}
+
+.tab-button.active {
+  background-color: #4285f4;
+  color: white;
+}

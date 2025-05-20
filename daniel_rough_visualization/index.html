@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ranges of Anxiety for Surgeries</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <h1>Anxiety Levels Visualizations</h1>
+    
+    <div class="tabs">
+        <button class="tab-button active" data-range="low">Low Anxiety</button>
+        <button class="tab-button" data-range="medium">Medium Anxiety</button>
+        <button class="tab-button" data-range="high">High Anxiety</button>
+    </div>
+
+    <div class="chart-container">
+        <svg id="anxietyChart" width="800" height="500"></svg>
+    </div>
+
+    <div id="tooltip" class="tooltip"></div>
+
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <script src="script.js"></script>
+</body>
+</html>
