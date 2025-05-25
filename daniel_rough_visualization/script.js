@@ -1,85 +1,166 @@
-d3.json("daniel2.json").then(data => {
-  const margin = { top: 60, right: 40, bottom: 50, left: 180 };
-  const width = 800 - margin.left - margin.right;
-  const baseHeight = 500 - margin.top - margin.bottom;
+// interactive_anxiety_heatmap.js
+const margin = { top: 100, right: 30, bottom: 30, left: 200 };
+const width = 1000 - margin.left - margin.right;
+const height = 700 - margin.top - margin.bottom;
 
-  const svgRoot = d3.select("#anxietyChart");
+const svg = d3.select("#heatmap")
+  .append("svg")
+  .attr("width", width + margin.left + margin.right)
+  .attr("height", height + margin.top + margin.bottom)
+  .append("g")
+  .attr("transform", `translate(${margin.left},${margin.top})`);
 
-  const getFilteredData = (range) => {
-    if (range === "low") return data.filter(d => d.anxiety_score < 0.4);
-    if (range === "medium") return data.filter(d => d.anxiety_score >= 0.4 && d.anxiety_score < 0.7);
-    return data.filter(d => d.anxiety_score >= 0.7); // high
-  };
+const tooltip = d3.select("body")
+  .append("div")
+  .style("position", "absolute")
+  .style("background", "#fff")
+  .style("padding", "6px")
+  .style("border", "1px solid #ccc")
+  .style("border-radius", "4px")
+  .style("pointer-events", "none")
+  .style("opacity", 0);
 
-  function drawChart(range) {
-    svgRoot.selectAll("*").remove();  // Clear entire chart
+const detailBox = d3.select("#details");
 
-    const filtered = getFilteredData(range);
-    const barHeight = 20;
-    const dynamicHeight = Math.max(baseHeight, filtered.length * barHeight);
+const brushInfo = d3.select("#heatmap")
+  .append("div")
+  .attr("id", "brush-info")
+  .style("margin-top", "20px")
+  .style("font-size", "14px")
+  .style("font-family", "sans-serif");
 
-    svgRoot.attr("height", dynamicHeight + margin.top + margin.bottom);
+const dropdown = d3.select("#heatmap")
+  .insert("select", ":first-child")
+  .attr("id", "surgeryFilter")
+  .style("margin-bottom", "10px");
 
-    const svg = svgRoot.append("g")
-      .attr("transform", `translate(${margin.left},${margin.top})`);
+dropdown.selectAll("option")
+  .data(["Top 10", "Top 20", "Top 50", "All"])
+  .enter()
+  .append("option")
+  .text(d => d);
 
-    const x = d3.scaleLinear()
-      .domain([0, d3.max(filtered, d => d.anxiety_score)])
-      .range([0, width]);
+let lastHovered = null;
+
+Promise.all([
+  d3.json("daniel.json")
+]).then(([data]) => {
+  const metrics = ["death_score", "asa_score", "commonality_score", "anxiety_score"];
+
+  data.forEach(d => {
+    d.anxiety_score = 0.6 * d.death_score + 0.2 * d.asa_score + 0.2 * d.commonality_score;
+  });
+
+  const scoreMin = d3.min(data, d => d.anxiety_score);
+  const scoreMax = d3.max(data, d => d.anxiety_score);
+
+  const render = (filtered) => {
+    svg.selectAll("*").remove();
+    detailBox.html("");
+
+    const x = d3.scaleBand()
+      .domain(metrics)
+      .range([0, width])
+      .padding(0.05);
 
     const y = d3.scaleBand()
       .domain(filtered.map(d => d.opname))
-      .range([0, dynamicHeight])
-      .padding(0.1);
+      .range([0, height])
+      .padding(0.05);
 
-    svg.selectAll("rect")
-      .data(filtered)
-      .enter()
-      .append("rect")
-      .attr("x", 0)
+    const color = d3.scaleSequential()
+      .interpolator(d3.interpolateRdYlGn)
+      .domain([scoreMax, scoreMin]);
+
+    svg.append("g").call(d3.axisTop(x));
+    svg.append("g").call(d3.axisLeft(y));
+
+    const cellData = filtered.flatMap(d => metrics.map(m => ({
+      opname: d.opname,
+      metric: m,
+      value: d[m],
+      all: d
+    })));
+
+    svg.selectAll()
+      .data(cellData)
+      .join("rect")
+      .attr("x", d => x(d.metric))
       .attr("y", d => y(d.opname))
-      .attr("width", d => x(d.anxiety_score))
+      .attr("width", x.bandwidth())
       .attr("height", y.bandwidth())
-      .attr("fill", "steelblue")
-      .append("title")
-      .text(d => `${d.opname} — Anxiety: ${d.anxiety_score.toFixed(2)}`);
+      .style("fill", d => color(d.value))
+      .style("stroke", "#fff")
+      .on("mouseover", function (event, d) {
+        lastHovered = d;
+        tooltip.transition().duration(200).style("opacity", 1);
+        tooltip.html(`<b>${d.opname}</b><br>${d.metric}: ${d.value.toFixed(3)}`)
+          .style("left", (event.pageX + 10) + "px")
+          .style("top", (event.pageY - 28) + "px");
+      })
+      .on("mouseout", function () {
+        tooltip.transition().duration(500).style("opacity", 0);
+        lastHovered = null;
+      });
 
-    // Y Axis (surgery names)
-    svg.append("g")
-      .call(d3.axisLeft(y).tickSizeOuter(0))
-      .selectAll("text")
-      .style("font-size", "10px");
+    const brush = d3.brush()
+      .extent([[0, 0], [width, height]])
+      .on("end", ({ selection }) => {
+        if (!selection) {
+          brushInfo.text("");
+          return;
+        }
+        const [[x0, y0], [x1, y1]] = selection;
+        const selected = cellData.filter(d => {
+          const cx = x(d.metric) + x.bandwidth() / 2;
+          const cy = y(d.opname) + y.bandwidth() / 2;
+          return x0 <= cx && cx <= x1 && y0 <= cy && cy <= y1;
+        });
 
-    // X Axis (anxiety score)
-    svg.append("g")
-      .attr("transform", `translate(0, ${dynamicHeight})`)
-      .call(d3.axisBottom(x).ticks(5))
-      .append("text")
-      .attr("x", width)
-      .attr("y", -6)
-      .attr("fill", "black")
-      .attr("text-anchor", "end")
-      .attr("font-weight", "bold")
-      .text("Anxiety Score");
+        svg.selectAll("rect")
+          .classed("selected", d => {
+            const cx = x(d.metric) + x.bandwidth() / 2;
+            const cy = y(d.opname) + y.bandwidth() / 2;
+            return x0 <= cx && cx <= x1 && y0 <= cy && cy <= y1;
+          });
 
-    // Optional Y-axis label
-    svg.append("text")
-      .attr("transform", "rotate(-90)")
-      .attr("x", -dynamicHeight / 2)
-      .attr("y", -margin.left + 15)
-      .attr("text-anchor", "middle")
-      .attr("font-weight", "bold")
-      .text("Surgery");
-  }
+        if (selected.length > 0) {
+          const avg = d3.mean(selected, d => d.value);
+          brushInfo.html(`<b>${selected.length}</b> cells selected<br>Average value: <b>${avg.toFixed(3)}</b>`);
+        } else {
+          brushInfo.text("No cells selected.");
+        }
+      });
 
-  // Initial chart
-  drawChart("low");
+    svg.append("g").call(brush);
+  };
 
-  // Tab switching logic
-  d3.selectAll(".tab-button").on("click", function () {
-    const range = d3.select(this).attr("data-range");
-    d3.selectAll(".tab-button").classed("active", false);
-    d3.select(this).classed("active", true);
-    drawChart(range);
+  const updateFilter = () => {
+    const choice = dropdown.node().value;
+    let filtered;
+    if (choice === "Top 10") filtered = data.sort((a, b) => b.anxiety_score - a.anxiety_score).slice(0, 10);
+    else if (choice === "Top 20") filtered = data.sort((a, b) => b.anxiety_score - a.anxiety_score).slice(0, 20);
+    else if (choice === "Top 50") filtered = data.sort((a, b) => b.anxiety_score - a.anxiety_score).slice(0, 50);
+    else filtered = data;
+    render(filtered);
+  };
+
+  dropdown.on("change", updateFilter);
+  updateFilter();
+
+  // Keyboard interaction
+  window.addEventListener("keydown", (e) => {
+    if (e.key === "Enter" && lastHovered) {
+      const vals = lastHovered.all;
+      detailBox.html(`
+        <div style="text-align:left; padding: 10px; border: 1px solid #ccc; background: #f9f9f9; border-radius: 6px;">
+          <b>${vals.opname}</b><br>
+          Anxiety Score: ${vals.anxiety_score.toFixed(3)}<br>
+          Death Score: ${vals.death_score.toFixed(3)}<br>
+          ASA Score: ${vals.asa_score.toFixed(3)}<br>
+          Commonality Score: ${vals.commonality_score.toFixed(3)}
+        </div>
+      `);
+    }
   });
 });
